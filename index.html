@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能城市知識挑戰</title>
+    <style>
+        body {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .progress-bar {
+            width: 250px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00ccff);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .game-screen {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .intro-screen {
+            background: linear-gradient(45deg, #1a1a2e, #16213e, #0f3460);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .intro-title {
+            font-size: 3.5rem;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #00ff88, #00ccff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.5)); }
+            to { filter: drop-shadow(0 0 20px rgba(0, 204, 255, 0.8)); }
+        }
+
+        .data-visualization {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+        }
+
+        .stat-number {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #00ff88;
+            margin: 15px 0;
+        }
+
+        .challenge-screen {
+            background: linear-gradient(135deg, #fd79a8, #e84393);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+            color: white;
+        }
+
+        .challenge-question {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .challenge-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        .option {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            color: #2d3436;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .option:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .option.correct {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            animation: correctPulse 0.8s ease;
+        }
+
+        .option.incorrect {
+            background: linear-gradient(135deg, #e17055, #d63031);
+            color: white;
+            animation: shake 0.8s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-15px); }
+            75% { transform: translateX(15px); }
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 20px 40px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 15px;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 25px;
+            padding: 50px;
+            max-width: 600px;
+            text-align: center;
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .wisdom-level {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .challenge-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .intro-title {
+                font-size: 2.5rem;
+            }
+            
+            .stat-number {
+                font-size: 3.5rem;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+            }
+            
+            .progress-bar {
+                width: 200px;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 遊戲標題欄 -->
+        <div class="header">
+            <div>
+                <h2>🏙️ 智能城市知識挑戰</h2>
+                <div>基於影片內容的智能城市測驗</div>
+                <div id="studentDisplay" style="display: none; margin-top: 5px; font-size: 0.9rem; opacity: 0.8;">
+                    👤 學號: <span id="displayStudentId"></span>
+                </div>
+            </div>
+            <div>
+                <div>🧠 城市智慧分數: <span id="wisdomScore">0</span>/1000</div>
+                <div>答對題數: <span id="correctCount">0</span>/10</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+            <div class="wisdom-level" id="wisdomLevel">🌱 智能城市新手</div>
+        </div>
+
+        <!-- 遊戲主畫面 -->
+        <div class="game-screen">
+            <!-- 開始畫面 -->
+            <div id="introScreen" class="intro-screen">
+                <h1 class="intro-title">智能城市知識挑戰</h1>
+                <div class="data-visualization">
+                    <h3>🎯 測驗說明</h3>
+                    <div class="stat-number">10</div>
+                    <p style="font-size: 1.3rem;">道基於影片內容的智能城市知識題目</p>
+                    <div style="display: flex; justify-content: space-around; margin-top: 30px; font-size: 1.1rem;">
+                        <div>📊 人口增長數據</div>
+                        <div>🏛️ 城市規劃理念</div>
+                        <div>🤖 智能技術應用</div>
+                    </div>
+                </div>
+                
+                <!-- 學號輸入區域 -->
+                <div class="student-input-section">
+                    <h3 style="margin-bottom: 20px;">📝 請輸入您的學號</h3>
+                    <input type="text" id="studentId" placeholder="請輸入學號" 
+                           style="padding: 15px 25px; font-size: 1.2rem; border: none; border-radius: 15px; 
+                                  width: 300px; text-align: center; margin-bottom: 20px; 
+                                  background: rgba(255, 255, 255, 0.9); color: #2d3436;">
+                    <div id="studentIdError" style="color: #ff6b6b; font-size: 1rem; margin-bottom: 10px; display: none;">
+                        請輸入有效的學號
+                    </div>
+                </div>
+                
+                <p style="font-size: 1.3rem; margin: 30px 0;">
+                    測試您對智能城市影片內容的理解程度！
+                </p>
+                <button class="btn" onclick="startChallenge()">🚀 開始挑戰</button>
+            </div>
+
+            <!-- 挑戰階段 -->
+            <div id="challengeScreen" class="challenge-screen hidden">
+                <div class="challenge-question">
+                    <div style="font-size: 4rem; margin-bottom: 20px;" id="questionIcon">🎯</div>
+                    <h2 id="questionTitle" style="font-size: 1.8rem; margin-bottom: 15px;">挑戰題目</h2>
+                    <p id="questionText" style="font-size: 1.3rem; line-height: 1.6;">問題描述</p>
+                    <div style="margin-top: 20px; font-size: 1.1rem;">
+                        題目 <span id="questionNumber">1</span>/10 | 
+                        分數: <span id="score">0</span>/1000 | 
+                        答對: <span id="currentCorrect">0</span>/10
+                    </div>
+                </div>
+                <div class="challenge-options" id="challengeOptions">
+                    <!-- 選項將動態生成 -->
+                </div>
+                <button class="btn hidden" id="nextQuestionBtn" onclick="nextQuestion()">下一題 ➡️</button>
+                <button class="btn hidden" id="finishBtn" onclick="finishGame()">查看結果 🏆</button>
+            </div>
+        </div>
+
+        <!-- 模態框 -->
+        <div class="modal" id="modal">
+            <div class="modal-content">
+                <h3 id="modalTitle" style="font-size: 2rem; margin-bottom: 20px;">標題</h3>
+                <p id="modalText" style="font-size: 1.2rem; line-height: 1.6;">內容</p>
+                <button class="btn" onclick="closeModal()">確定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態
+        let gameState = {
+            phase: 'intro', // intro, challenge
+            currentQuestion: 0,
+            score: 0,
+            wisdomScore: 0,
+            correctAnswers: 0,
+            studentId: ''
+        };
+
+        // 挑戰題目 - 基於影片內容的10道題目
+        const challenges = [
+            {
+                question: '影片以哪一數據作為切入點，強調人口激增的影響？',
+                icon: '📊',
+                options: [
+                    { text: '資源需求增長100%', icon: '📈', correct: false, explanation: '數據不正確，實際增長幅度更大' },
+                    { text: '資源需求增長518%', icon: '🚀', correct: true, explanation: '正確！影片強調人口激增導致資源需求增長518%' },
+                    { text: '資源需求增長200%', icon: '📊', correct: false, explanation: '數據偏低，實際增長更為驚人' },
+                    { text: '資源需求增長300%', icon: '📉', correct: false, explanation: '仍然低估了實際的增長幅度' }
+                ]
+            },
+            {
+                question: '影片中提到的傳統城市規劃理念發源地是哪裡？',
+                icon: '🏛️',
+                options: [
+                    { text: '倫敦', icon: '🇬🇧', correct: false, explanation: '倫敦有智能垃圾系統，但不是田園城市發源地' },
+                    { text: '上海', icon: '🇨🇳', correct: false, explanation: '上海以智能地鐵聞名，非田園城市起源' },
+                    { text: '英國萊奇沃思', icon: '🌳', correct: true, explanation: '正確！萊奇沃思是田園城市理念的發源地' },
+                    { text: '新加坡', icon: '🇸🇬', correct: false, explanation: '新加坡以數位孿生技術著稱' }
+                ]
+            },
+            {
+                question: '推動智能城市發展的核心技術不包括下列哪一項？',
+                icon: '🤖',
+                options: [
+                    { text: '人工智慧', icon: '🧠', correct: false, explanation: 'AI是智能城市的核心技術之一' },
+                    { text: '大數據', icon: '📊', correct: false, explanation: '大數據是智能城市的重要支撐' },
+                    { text: '5G通信', icon: '📡', correct: false, explanation: '5G提供高速低延遲的通信基礎' },
+                    { text: '傳統電話線', icon: '☎️', correct: true, explanation: '正確！傳統電話線不是智能城市的核心技術' }
+                ]
+            },
+            {
+                question: '倫敦的智能垃圾處理系統名稱是什麼？',
+                icon: '🗑️',
+                options: [
+                    { text: '回收之眼（Recycleye）', icon: '👁️', correct: true, explanation: '正確！回收之眼是倫敦的AI垃圾分類系統' },
+                    { text: '垃圾機器人', icon: '🤖', correct: false, explanation: '這不是倫敦系統的正確名稱' },
+                    { text: '環境衛士', icon: '🛡️', correct: false, explanation: '名稱不正確' },
+                    { text: '城市清潔者', icon: '🧹', correct: false, explanation: '這不是該系統的名稱' }
+                ]
+            },
+            {
+                question: '巴西庫里提巴的快速公交系統（BRT）的主要創新是什麼？',
+                icon: '🚌',
+                options: [
+                    { text: '無人駕駛', icon: '🤖', correct: false, explanation: 'BRT的創新不在於無人駕駛' },
+                    { text: '專用車道和管筒式車站', icon: '🚇', correct: true, explanation: '正確！BRT的創新在於專用車道和獨特的管筒式車站設計' },
+                    { text: '虛擬模擬', icon: '💻', correct: false, explanation: '這不是BRT系統的主要特點' },
+                    { text: '大數據監測', icon: '📊', correct: false, explanation: '大數據不是BRT的核心創新' }
+                ]
+            },
+            {
+                question: '上海地鐵10號線的特點是什麼？',
+                icon: '🚇',
+                options: [
+                    { text: '完全無人駕駛', icon: '🤖', correct: true, explanation: '正確！上海地鐵10號線實現了完全無人駕駛' },
+                    { text: '百米柵格監測', icon: '📊', correct: false, explanation: '百米柵格是北京的城市管理特色' },
+                    { text: '數位孿生模型', icon: '💻', correct: false, explanation: '數位孿生是新加坡的特色技術' },
+                    { text: '遠程醫療應用', icon: '🏥', correct: false, explanation: '這不是地鐵系統的特點' }
+                ]
+            },
+            {
+                question: '新加坡的「虛擬新加坡」項目主要應用哪一技術？',
+                icon: '🏙️',
+                options: [
+                    { text: '5G', icon: '📡', correct: false, explanation: '5G是通信技術，不是虛擬新加坡的核心' },
+                    { text: '數位孿生', icon: '👥', correct: true, explanation: '正確！虛擬新加坡項目主要應用數位孿生技術' },
+                    { text: '人工智慧視覺', icon: '👁️', correct: false, explanation: 'AI視覺不是該項目的主要技術' },
+                    { text: '混合現實', icon: '🥽', correct: false, explanation: 'MR不是虛擬新加坡的核心技術' }
+                ]
+            },
+            {
+                question: '北京的城市管理使用大數據將城市劃分為什麼？',
+                icon: '🏢',
+                options: [
+                    { text: '千米區域', icon: '📏', correct: false, explanation: '劃分單位太大，不夠精細' },
+                    { text: '百米柵格', icon: '🔲', correct: true, explanation: '正確！北京使用百米柵格進行精細化城市管理' },
+                    { text: '公里網格', icon: '🗺️', correct: false, explanation: '單位太大，無法實現精細管理' },
+                    { text: '行政區塊', icon: '🏛️', correct: false, explanation: '行政區塊不是大數據劃分方式' }
+                ]
+            },
+            {
+                question: '影片中，5G和混合現實技術主要應用在哪一領域來縮小城鄉差距？',
+                icon: '🏥',
+                options: [
+                    { text: '交通規劃', icon: '🚦', correct: false, explanation: '交通規劃不是5G+MR的主要應用領域' },
+                    { text: '垃圾處理', icon: '🗑️', correct: false, explanation: '垃圾處理主要使用AI技術' },
+                    { text: '遠程醫療', icon: '👨‍⚕️', correct: true, explanation: '正確！5G+MR技術在遠程醫療領域縮小城鄉差距' },
+                    { text: '城市模擬', icon: '🏙️', correct: false, explanation: '城市模擬主要使用數位孿生技術' }
+                ]
+            },
+            {
+                question: '影片結論強調智能城市的建設需要什麼平衡？',
+                icon: '⚖️',
+                options: [
+                    { text: '技術創新與人文關懷', icon: '🤝', correct: true, explanation: '正確！智能城市需要平衡技術創新與人文關懷' },
+                    { text: '傳統模式與現代模式', icon: '🔄', correct: false, explanation: '這不是影片強調的主要平衡點' },
+                    { text: '歐洲案例與亞洲案例', icon: '🌍', correct: false, explanation: '地區案例不是主要的平衡考量' },
+                    { text: '單一技術與多種技術', icon: '🔧', correct: false, explanation: '技術多樣性不是核心平衡點' }
+                ]
+            }
+        ];
+
+        // 初始化遊戲
+        function initGame() {
+            updateUI();
+            document.getElementById('studentId').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    startChallenge();
+                }
+            });
+        }
+
+        // 開始挑戰階段
+        function startChallenge() {
+            const studentIdInput = document.getElementById('studentId');
+            const studentId = studentIdInput.value.trim();
+            const errorDiv = document.getElementById('studentIdError');
+            
+            if (!studentId) {
+                errorDiv.textContent = '請輸入學號';
+                errorDiv.style.display = 'block';
+                studentIdInput.focus();
+                return;
+            }
+            
+            if (studentId.length < 3) {
+                errorDiv.textContent = '學號長度至少需要3個字符';
+                errorDiv.style.display = 'block';
+                studentIdInput.focus();
+                return;
+            }
+            
+            gameState.studentId = studentId;
+            errorDiv.style.display = 'none';
+            document.getElementById('displayStudentId').textContent = studentId;
+            document.getElementById('studentDisplay').style.display = 'block';
+            
+            gameState.phase = 'challenge';
+            gameState.currentQuestion = 0;
+            gameState.score = 0;
+            gameState.correctAnswers = 0;
+            gameState.wisdomScore = 0;
+            
+            document.getElementById('introScreen').classList.add('hidden');
+            document.getElementById('challengeScreen').classList.remove('hidden');
+            
+            loadQuestion();
+            playSound('challenge');
+        }
+
+        // 載入題目
+        function loadQuestion() {
+            const question = challenges[gameState.currentQuestion];
+            document.getElementById('questionIcon').textContent = question.icon;
+            document.getElementById('questionTitle').textContent = `第 ${gameState.currentQuestion + 1} 題`;
+            document.getElementById('questionText').textContent = question.question;
+            document.getElementById('questionNumber').textContent = gameState.currentQuestion + 1;
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('currentCorrect').textContent = gameState.correctAnswers;
+
+            const optionsContainer = document.getElementById('challengeOptions');
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.innerHTML = `
+                    <div style="font-size: 3rem; margin-bottom: 15px;">
+                        ${option.icon}
+                    </div>
+                    <div style="font-weight: bold; font-size: 1.2rem; line-height: 1.4;">${option.text}</div>
+                `;
+                optionElement.onclick = () => selectOption(index);
+                optionsContainer.appendChild(optionElement);
+            });
+
+            document.getElementById('nextQuestionBtn').classList.add('hidden');
+            document.getElementById('finishBtn').classList.add('hidden');
+        }
+
+        // 選擇答案
+        function selectOption(selectedIndex) {
+            const question = challenges[gameState.currentQuestion];
+            const options = document.querySelectorAll('.option');
+            
+            options.forEach(option => option.style.pointerEvents = 'none');
+
+            if (question.options[selectedIndex].correct) {
+                options[selectedIndex].classList.add('correct');
+                gameState.score += 100;
+                gameState.wisdomScore += 100;
+                gameState.correctAnswers += 1;
+                playSound('correct');
+                showModal('🎉 正確！', question.options[selectedIndex].explanation);
+            } else {
+                options[selectedIndex].classList.add('incorrect');
+                question.options.forEach((option, index) => {
+                    if (option.correct) {
+                        options[index].classList.add('correct');
+                    }
+                });
+                playSound('incorrect');
+                showModal('❌ 答錯了', question.options[selectedIndex].explanation + '\n\n' + 
+                    '正確答案：' + question.options.find(o => o.correct).text);
+            }
+
+            updateUI();
+
+            setTimeout(() => {
+                if (gameState.currentQuestion < challenges.length - 1) {
+                    document.getElementById('nextQuestionBtn').classList.remove('hidden');
+                } else {
+                    document.getElementById('finishBtn').classList.remove('hidden');
+                }
+            }, 2500);
+        }
+
+        // 下一題
+        function nextQuestion() {
+            gameState.currentQuestion++;
+            loadQuestion();
+        }
+
+        // 完成遊戲
+        function finishGame() {
+            let message = '';
+            let title = '';
+            let wisdomLevel = '';
+            
+            if (gameState.wisdomScore >= 900) {
+                wisdomLevel = '🏆 智能城市大師';
+            } else if (gameState.wisdomScore >= 800) {
+                wisdomLevel = '🥇 智能城市專家';
+            } else if (gameState.wisdomScore >= 600) {
+                wisdomLevel = '🥈 智能城市學者';
+            } else if (gameState.wisdomScore >= 400) {
+                wisdomLevel = '🥉 智能城市探索者';
+            } else {
+                wisdomLevel = '🌱 智能城市新手';
+            }
+            
+            const accuracy = Math.round((gameState.correctAnswers / 10) * 100);
+            
+            if (gameState.correctAnswers >= 9) {
+                title = '🏆 完美表現！';
+                message = `學號：${gameState.studentId}\n${wisdomLevel}\n\n答對題數：${gameState.correctAnswers}/10 (${accuracy}%)\n最終分數：${gameState.score}/1000\n\n您完全掌握了智能城市的核心知識，是真正的智能城市專家！`;
+            } else if (gameState.correctAnswers >= 7) {
+                title = '🎉 優秀表現！';
+                message = `學號：${gameState.studentId}\n${wisdomLevel}\n\n答對題數：${gameState.correctAnswers}/10 (${accuracy}%)\n最終分數：${gameState.score}/1000\n\n您對智能城市有很好的理解，繼續保持學習熱忱！`;
+            } else if (gameState.correctAnswers >= 5) {
+                title = '👍 不錯的開始！';
+                message = `學號：${gameState.studentId}\n${wisdomLevel}\n\n答對題數：${gameState.correctAnswers}/10 (${accuracy}%)\n最終分數：${gameState.score}/1000\n\n您已經掌握了基本的智能城市概念，可以進一步深入學習！`;
+            } else {
+                title = '💪 繼續學習！';
+                message = `學號：${gameState.studentId}\n${wisdomLevel}\n\n答對題數：${gameState.correctAnswers}/10 (${accuracy}%)\n最終分數：${gameState.score}/1000\n\n建議重新觀看影片並再次挑戰，加深對智能城市的理解！`;
+            }
+            
+            showModal(title, message);
+            playSound('finish');
+            
+            // 發送數據到 Google 試算表
+            sendToGoogleSheet(accuracy, wisdomLevel);
+        }
+
+        // 發送數據到 Google Apps Script
+        function sendToGoogleSheet(accuracy, wisdomLevel) {
+            const webAppUrl = 'https://script.google.com/macros/s/AKfycbxFBHv0Hg9iEg9GKrsjRK6n8oHU_wcaV3w_DfxR576KkB-WnHTNZ15mwKjtvYpNvTkThA/exec';  // 替換為你的 Apps Script Web App URL
+            const data = {
+                studentId: gameState.studentId,
+                correctAnswers: gameState.correctAnswers + '/10',
+                totalScore: gameState.score + '/1000',
+                accuracy: accuracy + '%',
+                wisdomLevel: wisdomLevel
+            };
+
+            fetch(webAppUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams(data)
+            })
+            .then(() => {
+                console.log('數據已發送到試算表！');
+                // 可選：顯示成功提示
+                // alert('成績已成功記錄到試算表！');
+            })
+            .catch(error => {
+                console.error('發送失敗：', error);
+                // 可選：顯示錯誤提示
+                // alert('無法記錄成績，請檢查網路或伺服器設定。');
+            });
+        }
+
+        // 更新 UI
+        function updateUI() {
+            document.getElementById('correctCount').textContent = gameState.correctAnswers;
+            document.getElementById('wisdomScore').textContent = gameState.wisdomScore;
+            document.getElementById('score').textContent = gameState.score;
+            
+            const progress = (gameState.currentQuestion / 10) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            
+            let wisdomLevel = '';
+            if (gameState.wisdomScore >= 900) {
+                wisdomLevel = '🏆 智能城市大師';
+            } else if (gameState.wisdomScore >= 800) {
+                wisdomLevel = '🥇 智能城市專家';
+            } else if (gameState.wisdomScore >= 600) {
+                wisdomLevel = '🥈 智能城市學者';
+            } else if (gameState.wisdomScore >= 400) {
+                wisdomLevel = '🥉 智能城市探索者';
+            } else {
+                wisdomLevel = '🌱 智能城市新手';
+            }
+            document.getElementById('wisdomLevel').textContent = wisdomLevel;
+            
+            const progressFill = document.getElementById('progressFill');
+            if (gameState.wisdomScore >= 800) {
+                progressFill.style.background = 'linear-gradient(90deg, #00ff88, #00d4aa)';
+            } else if (gameState.wisdomScore >= 500) {
+                progressFill.style.background = 'linear-gradient(90deg, #74b9ff, #0984e3)';
+            } else {
+                progressFill.style.background = 'linear-gradient(90deg, #00ff88, #00ccff)';
+            }
+        }
+
+        // 顯示模態框
+        function showModal(title, text) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalText').textContent = text;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        // 關閉模態框
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // 音效播放（模擬）
+        function playSound(type) {
+            console.log(`播放音效: ${type}`);
+        }
+
+        // 初始化遊戲
+        initGame();
+    </script>
+</body>
+</html>
